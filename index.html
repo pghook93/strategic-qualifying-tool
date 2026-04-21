@@ -3098,9 +3098,9 @@ independent specialists who can respond to the unique needs of diverse groups.
   "submissionDeadline": "date extracted from the document, or Not specified",
   "evidenceQuote": "a verbatim quote of up to 80 words from the uploaded document that best grounds the overall assessment",
   "pillars": {
-    "welcoming":   { "score": int, "criteria": { "collaborativeEmpowering": { "score": int, "logicPoints": ["string","string","string"] }, "justiceMarginalised": { "score": int, "logicPoints": ["string","string","string"] } } },
-    "discerning":  { "score": int, "criteria": { "evidenceCapacity":        { "score": int, "logicPoints": ["string","string","string"] }, "holisticCycleBreaking": { "score": int, "logicPoints": ["string","string","string"] } } },
-    "courageous":  { "score": int, "criteria": { "challengingInjustice":    { "score": int, "logicPoints": ["string","string","string"] }, "goingWhereOthersWont":  { "score": int, "logicPoints": ["string","string","string"] } } }
+    "welcoming":   { "score": int, "criteria": { "collaborativeEmpowering": { "score": int, "logicPoints": [{"s1":"string","s2":"string"},{"s1":"string","s2":"string"},{"s1":"string","s2":"string"}] }, "justiceMarginalised": { "score": int, "logicPoints": [{"s1":"string","s2":"string"},{"s1":"string","s2":"string"},{"s1":"string","s2":"string"}] } } },
+    "discerning":  { "score": int, "criteria": { "evidenceCapacity":        { "score": int, "logicPoints": [{"s1":"string","s2":"string"},{"s1":"string","s2":"string"},{"s1":"string","s2":"string"}] }, "holisticCycleBreaking": { "score": int, "logicPoints": [{"s1":"string","s2":"string"},{"s1":"string","s2":"string"},{"s1":"string","s2":"string"}] } } },
+    "courageous":  { "score": int, "criteria": { "challengingInjustice":    { "score": int, "logicPoints": [{"s1":"string","s2":"string"},{"s1":"string","s2":"string"},{"s1":"string","s2":"string"}] }, "goingWhereOthersWont":  { "score": int, "logicPoints": [{"s1":"string","s2":"string"},{"s1":"string","s2":"string"},{"s1":"string","s2":"string"}] } } }
   }
 }${profileSection}
 
@@ -3152,23 +3152,29 @@ Use only these verbs when describing what the document says: "states", "commits 
 - When in doubt between two bands, choose the lower band.
 
 # Logic Point Structure (MANDATORY — this structure drives the UI)
-For EVERY sub-criterion, provide exactly 3 logic points as plain strings. Each string is 2 complete sentences separated by a single space.
+For EVERY sub-criterion, provide exactly 3 logic points. Each logic point is an OBJECT with two keys: "s1" and "s2".
+
+CRITICAL: s1 and s2 are each a SINGLE, STANDALONE, GRAMMATICALLY COMPLETE sentence. Each must start with a capital letter, end with a full stop, contain a subject and a main verb, and make complete sense when read in total isolation from the other. Do not put multiple sentences into one field. Do not leave a field as a fragment.
 
 Point 1 — Score justification.
-  Sentence 1 begins with "Scored [X] as " and names the specific content in the uploaded document that determined the score (the commitment, target group, provision, or mechanism — named explicitly).
-  Sentence 2 explains what this means for Organisation X's ability to embody this value.
+  s1: begins with "Scored [X] as " and names the specific content in the uploaded document that determined the score (the commitment, target group, provision, or mechanism — named explicitly). Ends with a full stop.
+  s2: a complete standalone sentence explaining what this specific content means for Organisation X's ability to embody this value. Must begin with a named noun phrase (e.g. "This co-design requirement gives…"), never bare "This" or "It". Ends with a full stop.
 
 Point 2 — Supporting evidence.
-  Sentence 1 names a DIFFERENT specific provision, target group, or commitment from Point 1 and states what the uploaded document says about it.
-  Sentence 2 states what this enables or prevents Organisation X from doing. Do not repeat Point 1.
+  s1: names a DIFFERENT specific provision, target group, or commitment from Point 1 and states what the uploaded document says about it. Complete standalone sentence. Ends with a full stop.
+  s2: a complete standalone sentence stating what this enables or prevents Organisation X from doing. Must begin with a named noun phrase. Do not repeat Point 1. Ends with a full stop.
 
 Point 3 — Gap (if score < 50) OR confirming feature (if score = 50).
-  If score < 50: Sentence 1 begins with "A higher score would have required " and names a specific element observably absent from the uploaded document. Sentence 2 states the practical consequence for Organisation X.
-  If score = 50: Sentence 1 names a THIRD distinct feature of the uploaded document (different from Points 1 and 2) that further justifies the full score. Sentence 2 explains why it matters for Organisation X.
+  If score < 50:
+    s1: begins with "A higher score would have required " and names a specific element observably absent from the uploaded document. Complete standalone sentence ending with a full stop.
+    s2: a complete standalone sentence stating the practical consequence for Organisation X. Begins with a named noun phrase. Ends with a full stop.
+  If score = 50:
+    s1: names a THIRD distinct feature of the uploaded document (different from Points 1 and 2) that further justifies the full score. Complete standalone sentence ending with a full stop.
+    s2: a complete standalone sentence explaining why this third feature matters for Organisation X. Begins with a named noun phrase. Ends with a full stop.
   Do not repeat Points 1 or 2.
 
-# Prose Quality
-Every sentence must be independently grammatical: a named noun phrase as subject, a main verb, a complete thought. When a sentence refers back to something, the referent must be named in that same sentence (write "This co-design requirement gives…" not "This gives…"). Write fluent paragraphs, not template fragments stitched together.
+# Self-check before returning
+Before producing the final JSON, re-read every s1 and every s2 in isolation. For each one, ask: is this a complete sentence? Does it have a subject and a main verb? Does it end with a full stop? Does it make sense on its own without the other field? If the answer to any of these is no, rewrite that field.
 
 # Language
 - UK/Australian English throughout (marginalised, prioritise, programme, organisation, emphasise).
@@ -3532,6 +3538,21 @@ ${sliceAtSentenceBoundary(policyText, 10000)}
   }
 
   // Aggressively repair broken AI sentence patterns before rendering
+  // Safely join a logic point into display text.
+  // New shape: { s1: 'First sentence.', s2: 'Second sentence.' }
+  // Legacy shape: 'First sentence. Second sentence.' (string)
+  function joinLogicPoint(b) {
+    if (b && typeof b === 'object' && (b.s1 || b.s2)) {
+      const s1 = (b.s1 || '').trim();
+      const s2 = (b.s2 || '').trim();
+      // Defensive: ensure s1 ends with terminal punctuation so concat reads cleanly
+      const s1Clean = s1 ? (/[\.!?]$/.test(s1) ? s1 : s1 + '.') : '';
+      if (s1Clean && s2) return s1Clean + ' ' + s2;
+      return s1Clean || s2;
+    }
+    return typeof b === 'string' ? b : '';
+  }
+
   function fixBrokenSentences(text) {
     if (!text) return text;
     let t = text;
@@ -3609,11 +3630,9 @@ ${sliceAtSentenceBoundary(policyText, 10000)}
 
       const bulletsHtml = bullets.map((b, bi) => {
         const isFirst = bi === 0;
-        // Normalise: handle plain string or legacy {s1,s2} object
-        const rawText = (b && typeof b === 'object' && b.s1)
-          ? (b.s1.trim() + ' ' + (b.s2 || '').trim()).trim()
-          : (typeof b === 'string' ? b : '');
-        // Post-process: fix known broken patterns from the AI
+        // Normalise: handle new {s1,s2} object shape (preferred) or legacy plain string
+        const rawText = joinLogicPoint(b);
+        // Post-process: fix known broken patterns from the AI (only as safety net)
         const bText = fixBrokenSentences(rawText);
         const cleaned = isFirst ? bText : stripDirectQuotes(bText);
         const klass = isFirst ? 'hi' : '';
