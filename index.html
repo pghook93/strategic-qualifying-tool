@@ -3060,6 +3060,27 @@ independent specialists who can respond to the unique needs of diverse groups.
 
 
   // ---------------- Prompts ----------------
+  // Truncate text at the nearest sentence-ending punctuation at or before maxChars.
+  // This prevents the model from quoting fragments that end mid-phrase.
+  function sliceAtSentenceBoundary(text, maxChars) {
+    if (!text) return '';
+    if (text.length <= maxChars) return text;
+    const head = text.slice(0, maxChars);
+    // Find the last sentence-ending punctuation followed by whitespace or end.
+    // Look within the last 2000 chars so we don't truncate too aggressively.
+    const searchStart = Math.max(0, head.length - 2000);
+    const tail = head.slice(searchStart);
+    const match = tail.match(/[\.!?]["')\]]*\s+(?=[A-Z0-9])(?![\s\S]*[\.!?]["')\]]*\s+(?=[A-Z0-9]))/);
+    if (match && match.index !== undefined) {
+      const cutAt = searchStart + match.index + match[0].length;
+      return head.slice(0, cutAt).trim();
+    }
+    // Fallback: cut at last period/question/exclamation anywhere in head
+    const lastPunct = Math.max(head.lastIndexOf('. '), head.lastIndexOf('? '), head.lastIndexOf('! '));
+    if (lastPunct > maxChars * 0.6) return head.slice(0, lastPunct + 1).trim();
+    return head.trim();
+  }
+
   function buildPrimaryPrompt(policyText, orgProfile) {
     const profileSection = orgProfile && orgProfile.trim()
       ? `\n# Organisation X Profile\nThe following describes Organisation X's mission, strategic priorities, values, and focus populations. Use this to contextualise your scoring — especially Evidence & Capacity (score higher when the policy aligns with Organisation X's existing expertise) and Going Where Others Won't (score higher when the policy is in territory Organisation X has experience operating).\n\"\"\"\n${orgProfile.trim()}\n\"\"\"\n`
@@ -3119,6 +3140,17 @@ You may ONLY use facts, commitments, provisions, target groups, mechanisms, and 
 
 Use only these verbs when describing what the document says: "states", "commits to", "requires", "identifies", "names", "proposes", "specifies". Do NOT use "implies", "suggests", "indicates", "demonstrates", or "shows".
 
+# Quoting rules (MANDATORY — prevents broken sentences)
+- When quoting or paraphrasing the uploaded document, you MUST complete the thought. Every sentence you write must be a grammatically complete, fully-formed English sentence — never ending on a trailing preposition, conjunction, or auxiliary verb (e.g. "the strategy will be.", "developed using and.", "feedback will be considered alongside." are ALL INVALID).
+- If the relevant passage in the uploaded document is itself fragmentary, truncated, or too vague to quote coherently, DO NOT reproduce the fragment. Instead write: "The uploaded document does not elaborate on [specific aspect]." and treat this as evidence of a gap.
+- Before finalising any sentence, re-read it. If removing the surrounding context would leave it ungrammatical or incomplete, rewrite it.
+
+# Conservatism Guardrails (apply BEFORE finalising any score)
+- If the uploaded document treats a criterion's subject-matter only in general terms (aspirations, principles, indicators) without specific enforceable provisions, target groups, or mechanisms, the score for that criterion MUST NOT exceed 30.
+- Evidence & Capacity: Score conservatively (≤ 30) unless the opportunity explicitly engages with gender justice, First Nations communities, men and boys, justice reform, youth, or economic inclusion through specific named provisions (not just thematic mentions).
+- A score of 50 requires the opportunity to be explicitly and primarily structured around that criterion — not merely mention it alongside other things.
+- When in doubt between two bands, choose the lower band.
+
 # Logic Point Structure (MANDATORY — this structure drives the UI)
 For EVERY sub-criterion, provide exactly 3 logic points as plain strings. Each string is 2 complete sentences separated by a single space.
 
@@ -3144,9 +3176,9 @@ Every sentence must be independently grammatical: a named noun phrase as subject
 - Pillar names exactly: Welcoming, Discerning, Courageous.
 - Never cite section titles or headings — cite what the document says, not where.
 
-# Uploaded document (first 20,000 characters — this is your ONLY source of facts)
+# Uploaded document (truncated at sentence boundary — this is your ONLY source of facts)
 """
-${policyText.slice(0, 20000)}
+${sliceAtSentenceBoundary(policyText, 20000)}
 """`;
   }
 
@@ -3208,9 +3240,13 @@ Return ONLY valid minified JSON (no markdown fences, no prose) in this schema:
 - Strict grounding: every claim, quote, statistic, provision, target group, and programme name you output must come from either the uploaded inquiry document OR the KB documents above. Do not introduce information from outside these sources. Do not paraphrase things the documents do not say.
 - If a verbatim quote cannot be found in either source, omit it rather than invent one.
 
-# Uploaded inquiry document (for quote extraction — first 10,000 characters)
+# Quoting rules (MANDATORY)
+- Every quote must be grammatically complete — never end on a trailing preposition, conjunction, or auxiliary verb.
+- If a passage in the uploaded document is fragmentary or too vague to quote coherently, DO NOT reproduce a fragment — omit the quote and mark that logic point as lacking verbatim evidence instead.
+
+# Uploaded inquiry document (truncated at sentence boundary — for quote extraction)
 """
-${policyText.slice(0, 10000)}
+${sliceAtSentenceBoundary(policyText, 10000)}
 """`;
   }
 
