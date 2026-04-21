@@ -3064,108 +3064,87 @@ independent specialists who can respond to the unique needs of diverse groups.
     const profileSection = orgProfile && orgProfile.trim()
       ? `\n# Organisation X Profile\nThe following describes Organisation X's mission, strategic priorities, values, and focus populations. Use this to contextualise your scoring — especially Evidence & Capacity (score higher when the policy aligns with Organisation X's existing expertise) and Going Where Others Won't (score higher when the policy is in territory Organisation X has experience operating).\n\"\"\"\n${orgProfile.trim()}\n\"\"\"\n`
       : '';
-    return `You are the Strategic Discernment Lead for Jesuit Social Services (referred to throughout your output as "Organisation X"). Your role is to assess whether the OPPORTUNITY described in the uploaded document would enable Organisation X to live out its core values and strategic commitments. The question you are answering for each criterion is not "does this document discuss X?" — it is: "will engaging with this opportunity allow Organisation X to be X?".${profileSection}
+    return `You are the Strategic Discernment Lead for Jesuit Social Services (referred to throughout your output as "Organisation X"). Your role is to assess whether the OPPORTUNITY described in the uploaded document would enable Organisation X to live out its core values and strategic commitments. For each criterion you are answering: "will engaging with this opportunity allow Organisation X to be this?".
 
-# Three-Pillar Framework
-For each sub-criterion below, score how well the OPPORTUNITY would enable Organisation X to embody that value in practice:
-- WELCOMING
-  - Collaborative & Empowering — Will this opportunity enable Organisation X to work in genuine partnership with community, respecting agency and centring lived experience?
-  - Justice for the Marginalised — Will this opportunity enable Organisation X to pursue intersectional justice for those most excluded from power and services?
-- DISCERNING
-  - Evidence & Capacity — Will this opportunity enable Organisation X to apply its existing evidence base and specialist expertise to generate impact?
-  - Holistic & Cycle-Breaking — Will this opportunity enable Organisation X to address root causes and systemic drivers rather than surface symptoms?
-- COURAGEOUS
-  - Challenging Injustice — Will this opportunity enable Organisation X to confront structural discrimination and advocate for systemic reform?
-  - Going Where Others Won't — Will this opportunity enable Organisation X to operate in politically sensitive, high-risk, or under-served terrain that others avoid?
-
-# Strict Scoring Mechanics (NO exceptions)
-Each sub-criterion score MUST be one of: 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50.
-Baseline guidance (framed as: how much does this opportunity enable Organisation X to be this?):
-- 50 — Strongly enabling: The opportunity is explicitly and primarily structured around this criterion; engaging with it would directly advance Organisation X's expression of this value.
-- 40 — Enabling: Specific, concrete provisions in the opportunity would allow Organisation X to act on this value in meaningful ways.
-- 30 — Partially enabling: The opportunity touches on this value area but lacks the depth, enforceability, or specificity to fully enable Organisation X to act on it.
-- 20 — Weakly enabling: The opportunity references this value area only vaguely, or has mixed implications for Organisation X.
-- 10 — Not enabling: The opportunity does not engage this value area in ways that would allow Organisation X to act on it.
-- 0  — Disabling: Engaging with this opportunity would actively work against Organisation X's expression of this value.
-(5-step intermediates permissible when justified.)
-
-Pillar score = sum of its two sub-criterion scores (max 100).
-Total alignment score = exact arithmetic mean of the three pillar scores (0–100), rounded to the nearest integer.
-
-# Recommendation & Effort Thresholds
-- 85–100 → strategicAction: "Lead" — Draft comprehensive standalone submission, seek public hearing.
-- 60–84  → strategicAction: "Partner" — Support sector-wide response (e.g. VCOSS/peak bodies), provide targeted data only.
-- < 60   → strategicAction: "Monitor" — Track via Evidence Sentinel, do not allocate staff hours.
-
-Effort Estimate: "High" | "Medium" | "Low" | "Unknown" (Unknown is MANDATORY fallback when inputs lack enough info).
-
-# Writing Rules (MANDATORY)
-
-Every logic point is a self-contained paragraph. Write it as fluent prose, not as a sequence of instructions stitched together. Before writing each sentence, ask: does this sentence have a subject, a verb, and make complete sense on its own?
-
-FORBIDDEN sentence patterns — these will make the output nonsensical:
-- "The paper also highlights that This further reinforces..." — never start a new clause with a capital letter mid-sentence after "that"
-- "The uploaded document's asks, which directly..." — do not use "asks" as a noun; do not begin a sentence with a relative clause
-- "This further reinforces Organisation X's..." as a standalone sentence where "This" has no named antecedent in the same sentence
-- Any sentence of the form "[clause] that [capital letter word]..." — this means two fragments were incorrectly joined
-
-Each sentence must be written as: [Named subject] [verb] [object/complement]. Example of correct construction: "The uploaded document commits to co-designing service delivery with community-controlled organisations, giving Organisation X a formal role in shaping programme outcomes rather than being consulted after decisions are made."
-
-Never cite section headings or titles (e.g. never write "the 'Why we focus on safety' section"). Cite what the document says, not where it says it.
-
-Never use "this", "it", "these", or "that" to open a sentence unless the referent is explicitly named in that same sentence. Wrong: "This further reinforces...". Right: "This commitment to co-design further reinforces...".
-
-Never invent content. If the document does not explicitly state something, do not claim it. Do not use "implies", "suggests", or "demonstrates" — only "states", "commits to", "requires", or "identifies".
-
-Do not capitalise ordinary words mid-sentence. Only proper nouns (names of people, organisations, places, programmes) are capitalised.
-
-# Output Formatting Rules
-For EVERY sub-criterion, provide exactly 3 logic points. Each is a plain string containing exactly 2 complete sentences separated by a single space.
-
-Point 1 — Score rationale (2 sentences, minimum 40 words total):
-- Sentence 1 MUST begin with "Scored [X] as " and name the specific content in the uploaded document that determined the score — name the commitment, target group, or mechanism explicitly.
-- Sentence 2 explains what this means for Organisation X. It MUST begin with a named noun phrase, e.g. "This co-design requirement gives Organisation X..." or "This commitment to X enables Organisation X to...". It must NOT begin with bare "This" or "It" without a named referent.
-- GOOD EXAMPLE: "Scored 35 as the uploaded document requires government agencies to establish formal co-design agreements with community-controlled organisations before finalising service delivery arrangements. This co-design requirement gives Organisation X a structural entry point to operate as a partner in programme design rather than being consulted after decisions are already made."
-
-Point 2 — Enabling evidence (2 sentences, minimum 35 words total):
-- Sentence 1 names a DIFFERENT specific provision, target group, or commitment from Point 1 and states what the document says about it.
-- Sentence 2 states what this enables or prevents Organisation X from doing. It MUST begin with a named noun phrase — never bare "This" or "It".
-- Do NOT repeat or rephrase anything from Point 1.
-
-Point 3 — Gap or reinforcement (2 sentences, minimum 35 words total):
-- If score < 50: Sentence 1 begins with "A higher score would have required " and names a specific element observably absent from the document. Sentence 2 states the practical consequence for Organisation X.
-- If score = 50: Sentence 1 names a THIRD distinct feature of the document (different from Points 1 and 2) that further justifies the score. Sentence 2 explains why it matters for Organisation X.
-- Do NOT repeat or rephrase anything from Points 1 or 2.
-
-# Language
-- UK/Australian English throughout.
-- Always call the document "the uploaded document".
-- Pillar names exactly: Welcoming, Discerning, Courageous.
-
-# Guardrails
-- Evidence & Capacity: Score conservatively (≤ 30) unless the opportunity explicitly engages with gender justice, First Nations communities, men and boys, justice reform, youth, or economic inclusion in ways that Organisation X already has specialist knowledge and programmes in.
-- Frame every logic point from Organisation X's perspective: "this opportunity would enable Organisation X to..." or "this opportunity does not allow Organisation X to..." — never "this document shows..." or "the document focuses on...".
-
-# Return format
-Return ONLY valid minified JSON — no markdown fences, no prose. Schema:
-
+# Return format (produce this exact JSON — no markdown, no prose outside JSON)
 {
   "documentType": "the uploaded document",
   "documentTitle": "short title extracted from the document",
-  "impactNarrative": "1–2 sentences on how this opportunity would enable Organisation X to advance its mission, grounded in what the opportunity specifically proposes and how it aligns with Organisation X's values",
+  "impactNarrative": "1–2 sentences on how engaging with this opportunity would enable Organisation X to advance its mission, grounded only in what the uploaded document specifically proposes",
   "alignmentScore": integer 0-100,
   "strategicAction": "Lead" | "Partner" | "Monitor",
   "effortEstimate": "High" | "Medium" | "Low" | "Unknown",
   "submissionDeadline": "date extracted from the document, or Not specified",
-  "evidenceQuote": "a verbatim quote of up to 80 words from the document that best grounds the overall assessment",
+  "evidenceQuote": "a verbatim quote of up to 80 words from the uploaded document that best grounds the overall assessment",
   "pillars": {
     "welcoming":   { "score": int, "criteria": { "collaborativeEmpowering": { "score": int, "logicPoints": ["string","string","string"] }, "justiceMarginalised": { "score": int, "logicPoints": ["string","string","string"] } } },
     "discerning":  { "score": int, "criteria": { "evidenceCapacity":        { "score": int, "logicPoints": ["string","string","string"] }, "holisticCycleBreaking": { "score": int, "logicPoints": ["string","string","string"] } } },
     "courageous":  { "score": int, "criteria": { "challengingInjustice":    { "score": int, "logicPoints": ["string","string","string"] }, "goingWhereOthersWont":  { "score": int, "logicPoints": ["string","string","string"] } } }
   }
-}
+}${profileSection}
 
-# Document to evaluate (first 20,000 characters)
+# Three-Pillar Framework
+- WELCOMING
+  - Collaborative & Empowering — partnership with community, respecting agency and centring lived experience.
+  - Justice for the Marginalised — intersectional justice for those most excluded from power and services.
+- DISCERNING
+  - Evidence & Capacity — applying an existing evidence base and specialist expertise.
+  - Holistic & Cycle-Breaking — addressing root causes and systemic drivers rather than surface symptoms.
+- COURAGEOUS
+  - Challenging Injustice — confronting structural discrimination and advocating for systemic reform.
+  - Going Where Others Won't — operating in politically sensitive, high-risk, or under-served terrain.
+
+# Scoring Mechanics
+Each sub-criterion score MUST be one of: 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50.
+- 50 Strongly enabling: the opportunity is explicitly and primarily structured around this criterion.
+- 40 Enabling: specific concrete provisions would let Organisation X act on this value meaningfully.
+- 30 Partially enabling: touched on, but lacking depth, enforceability, or specificity.
+- 20 Weakly enabling: vague references or mixed implications.
+- 10 Not enabling: does not engage this value area.
+- 0  Disabling: engaging would actively work against this value.
+(5-step intermediates permissible when justified.)
+
+Pillar score = sum of its two sub-criterion scores (max 100).
+Total alignment score = arithmetic mean of the three pillar scores (0–100), rounded to the nearest integer.
+
+# Recommendation & Effort Thresholds
+- 85–100 → "Lead"    — Draft comprehensive standalone submission, seek public hearing.
+- 60–84  → "Partner" — Support sector-wide response; provide targeted data only.
+- <60    → "Monitor" — Track via Evidence Sentinel; do not allocate staff hours.
+
+Effort Estimate: "High" | "Medium" | "Low" | "Unknown". Use "Unknown" when inputs lack enough information.
+
+# Grounding (CRITICAL — STRICT)
+You may ONLY use facts, commitments, provisions, target groups, mechanisms, and language that appear explicitly in the uploaded document below. You must not supplement with outside knowledge, general policy context, what similar policies usually contain, or anything about Organisation X's existing programmes. If the uploaded document does not state something, do not claim or infer it. If no relevant content exists for a criterion, score accordingly and say so plainly.
+
+Use only these verbs when describing what the document says: "states", "commits to", "requires", "identifies", "names", "proposes", "specifies". Do NOT use "implies", "suggests", "indicates", "demonstrates", or "shows".
+
+# Logic Point Structure (MANDATORY — this structure drives the UI)
+For EVERY sub-criterion, provide exactly 3 logic points as plain strings. Each string is 2 complete sentences separated by a single space.
+
+Point 1 — Score justification.
+  Sentence 1 begins with "Scored [X] as " and names the specific content in the uploaded document that determined the score (the commitment, target group, provision, or mechanism — named explicitly).
+  Sentence 2 explains what this means for Organisation X's ability to embody this value.
+
+Point 2 — Supporting evidence.
+  Sentence 1 names a DIFFERENT specific provision, target group, or commitment from Point 1 and states what the uploaded document says about it.
+  Sentence 2 states what this enables or prevents Organisation X from doing. Do not repeat Point 1.
+
+Point 3 — Gap (if score < 50) OR confirming feature (if score = 50).
+  If score < 50: Sentence 1 begins with "A higher score would have required " and names a specific element observably absent from the uploaded document. Sentence 2 states the practical consequence for Organisation X.
+  If score = 50: Sentence 1 names a THIRD distinct feature of the uploaded document (different from Points 1 and 2) that further justifies the full score. Sentence 2 explains why it matters for Organisation X.
+  Do not repeat Points 1 or 2.
+
+# Prose Quality
+Every sentence must be independently grammatical: a named noun phrase as subject, a main verb, a complete thought. When a sentence refers back to something, the referent must be named in that same sentence (write "This co-design requirement gives…" not "This gives…"). Write fluent paragraphs, not template fragments stitched together.
+
+# Language
+- UK/Australian English throughout (marginalised, prioritise, programme, organisation, emphasise).
+- Refer to the source as "the uploaded document".
+- Pillar names exactly: Welcoming, Discerning, Courageous.
+- Never cite section titles or headings — cite what the document says, not where.
+
+# Uploaded document (first 20,000 characters — this is your ONLY source of facts)
 """
 ${policyText.slice(0, 20000)}
 """`;
@@ -3222,12 +3201,12 @@ Return ONLY valid minified JSON (no markdown fences, no prose) in this schema:
 - Across all 6 criteria combined, the MAJORITY of quotes must come from KB documents. Do not let uploaded document quotes dominate.
 
 # Focus Area & Case Study rules
-- UK English only (marginalised, prioritise, programme, etc.).
+- UK/Australian English only (marginalised, prioritise, programme, etc.).
 - Refer to the document by the same documentType as the first pass: "${assessment && assessment.documentType || 'the consultation'}".
-- Focus Areas: the 'directQuotes' array must contain ONLY direct verbatim quotes. For odd-numbered focus areas (1st, 3rd) draw quotes from the uploaded document. For even-numbered focus areas (2nd) draw quotes from the KB documents if available. Always label which source the quote is from in the focus area rationale.
-- Case Studies: draw from Organisation X's known KB of programmes and partnerships (e.g. The Men's Project, Modelling Respect and Equality (MoRE), Worth A Second Chance, Artful Dodgers Studios, Atyenhenge Athere Aboriginal Corporation, The Man Box research, Jesuit Community College, etc.) — or from the uploaded KB documents if they contain relevant programme names. Pick the 3 most relevant. Format each as name + 1-2 sentence relevance.
-- For any focus area / case study touching the Discerning pillar (Evidence & Capacity or Holistic & Cycle-Breaking), explicitly pull evidence from the KB documents rather than just the uploaded document.
-- Do NOT invent statistics or quotes. If a specific quote is not in the document or KB, do not include it.
+- Focus Areas: the 'directQuotes' array must contain ONLY direct verbatim quotes that appear literally in the uploaded inquiry document or in the KB documents above. For odd-numbered focus areas (1st, 3rd) draw quotes from the uploaded inquiry document. For even-numbered focus areas (2nd) draw quotes from the KB documents if available. Always label which source the quote is from in the focus area rationale.
+- Case Studies: you may ONLY name case studies, programmes, or partnerships that are explicitly referenced in the KB documents provided above. Do not draw on outside knowledge of Organisation X's wider programme portfolio. If fewer than 3 relevant case studies are supported by the KB, return fewer entries — do not pad.
+- Strict grounding: every claim, quote, statistic, provision, target group, and programme name you output must come from either the uploaded inquiry document OR the KB documents above. Do not introduce information from outside these sources. Do not paraphrase things the documents do not say.
+- If a verbatim quote cannot be found in either source, omit it rather than invent one.
 
 # Uploaded inquiry document (for quote extraction — first 10,000 characters)
 """
@@ -3287,7 +3266,7 @@ ${policyText.slice(0, 10000)}
     const body = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
-        temperature: 0.1,
+        temperature: 0.3,
         topP: 0.9,
         maxOutputTokens: maxTokens || 12000
       }
@@ -3324,20 +3303,6 @@ ${policyText.slice(0, 10000)}
 
   function parseJSON(text) {
     let t = text.trim();
-    // Pre-clean: fix fused sentence patterns IN the raw JSON string before parsing.
-    // These patterns appear inside JSON string values and cause corrupted sentences.
-    // We target only the exact bad sequences seen in production output.
-    // Pattern: "that This", "that These", "that The uploaded", "that It "
-    // Replace inside JSON strings only (between " delimiters context doesn't matter — safe global replace)
-    t = t.replace(/\s+that\s+This\s+/g, '. This ');
-    t = t.replace(/\s+that\s+These\s+/g, '. These ');
-    t = t.replace(/\s+that\s+The\s+uploaded/g, '. The uploaded');
-    t = t.replace(/\s+that\s+It\s+/g, '. It ');
-    t = t.replace(/\s+such\s+as\s+This\s+/g, '. This ');
-    t = t.replace(/\s+such\s+as\s+These\s+/g, '. These ');
-    t = t.replace(/\s+improving\s+This\s+/g, ', improving outcomes. This ');
-    t = t.replace(/\s+including\s+This\s+/g, '. This ');
-    t = t.replace(/\s+including\s+These\s+/g, '. These ');
     // Strip markdown fences
     if (t.startsWith('```')) {
       t = t.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
