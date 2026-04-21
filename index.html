@@ -3026,9 +3026,9 @@ independent specialists who can respond to the unique needs of diverse groups.
   }
 
   // ---------------- Gemini API config ----------------
-  const GEMINI_API_KEY = 'AIzaSyCuPxlSe_6SlgFxEaZUuWoHml1x9WKv05E';
-  const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-  const GEMINI_ENDPOINT_NO_THINK = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+  // Key lives server-side in a Cloudflare Worker proxy. Never embedded in this file.
+  const GEMINI_ENDPOINT = 'https://sqt-gemini-proxy.penny-e27.workers.dev/';
+  const GEMINI_ENDPOINT_NO_THINK = GEMINI_ENDPOINT;
 
   // ---------------- State ----------------
   const state = {
