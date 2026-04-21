@@ -3305,7 +3305,16 @@ ${sliceAtSentenceBoundary(policyText, 10000)}
         temperature: 0.3,
         topP: 0.9,
         maxOutputTokens: maxTokens || 12000
-      }
+      },
+      // Relax safety filters: this tool analyses policy documents on gender-based
+      // violence, First Peoples trauma, justice reform, etc. Default filters redact
+      // relevant terms mid-sentence, producing broken output. Legitimate professional use.
+      safetySettings: [
+        { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+      ]
     };
     // thinking: disabled = 0 budget (fast, structured); enabled = capped at 8000 to prevent token bleed
     body.generationConfig.thinkingConfig = { thinkingBudget: disableThinking ? 0 : 8000 };
