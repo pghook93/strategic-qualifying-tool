@@ -3553,66 +3553,17 @@ ${sliceAtSentenceBoundary(policyText, 10000)}
     return typeof b === 'string' ? b : '';
   }
 
-  function fixBrokenSentences(text) {
-    if (!text) return text;
-    let t = text;
-
-    // 1. FUSION REPAIR: only split when a subordinating verb is followed by a bare pronoun (This/These/It/The)
-    //    which signals two fragments were fused. Do NOT split on proper nouns like Aboriginal, Victorian etc.
-    //    Pattern: "highlights that This", "notes that These", "that The uploaded", "improving This", "including These"
-    t = t.replace(
-      /\b(improving|including|highlights?|identifies?|notes?|confirms?|shows?|recognises?|recognizes?|demonstrates?|acknowledges?|emphasises?|emphasizes?|indicates?|asserts?|specifies?)\s+that\s+(This|These|It|The)\b/g,
-      (match, verb, pronoun) => `${verb}. ${pronoun}`
-    );
-    // Also catch "verb This/These" without "that" — e.g. "improving This", "including These"
-    t = t.replace(
-      /\b(improving|including)\s+(This|These)\b/g,
-      (match, verb, pronoun) => `${verb} these commitments. ${pronoun}`
-    );
-
-    // 2. INLINE CAPITAL after lowercase word (mid-sentence wrongly capitalised non-proper-noun)
-    //    e.g. "while mentions These specific" — "These" should be "these"
-    //    Lowercase a capital word that follows a lowercase word and is NOT a proper noun we know
-    t = t.replace(/\b([a-z]{2,})\s+([A-Z][a-z]{2,})\b/g, (match, lower, cap) => {
-      // Preserve known proper nouns and Organisation X
-      const properNouns = ['Organisation', 'Australian', 'Aboriginal', 'Torres', 'Strait', 'Islander',
-        'Northern', 'Territory', 'Victorian', 'Federal', 'Senate', 'Parliament', 'Jesuit', 'Social',
-        'Services', 'Welcoming', 'Discerning', 'Courageous', 'First', 'Nations', 'Lead', 'Partner', 'Monitor'];
-      if (properNouns.includes(cap)) return match;
-      // If preceded by a sentence-ending period, keep capital (it's a new sentence)
-      return match; // Don't lowercase — too risky; instead handle via pattern matching below
-    });
-
-    // 3. SPECIFIC KNOWN BAD PATTERNS — direct string replacements for the exact errors seen
-    t = t.replace(/\bsuch as\s+This\b/g, '. This');
-    t = t.replace(/\bwhile\s+mentions?\s+These\b/gi, 'while noting these commitments,');
-    t = t.replace(/\bmentions?\s+These\b/gi, 'mentions these provisions,');
-    t = t.replace(/\bthat\s+This\b/g, '. This');
-    t = t.replace(/\bthat\s+These\b/g, '. These');
-    t = t.replace(/\bthat\s+The\s+uploaded/g, '. The uploaded');
-
-    // 4. TRAILING FRAGMENTS — sentence ends on a preposition or subordinator
-    t = t.replace(/\s+(of|that|which|where|whose|with|by|in|to|for|and|but|as|from)\s*\.?\s*$/i, '.');
-
-    // 5. DOUBLE SPACES
-    t = t.replace(/\s{2,}/g, ' ');
-
-    // 6. Ensure ends with punctuation
-    if (!/[.!?]$/.test(t.trim())) t = t.trim() + '.';
-
-    return t.trim();
-  }
-
-  function stripDirectQuotes(text) {
-    return text
-      .replace(/[“”‚‘’][^\u201c\u201d\u201a\u2018\u2019]{5,}[\u201c\u201d\u201a\u2018\u2019]/g, (m) => {
-        const inner = m.slice(1,-1).trim();
-        return inner.split(/\s+/).length > 4 ? '' : m;
-      })
-      .replace(/\"[^\"]{10,}\"/g, '')
-      .replace(/\s{2,}/g, ' ')
-      .replace(/\s([,.])/g, '$1')
-      .trim();
+  // Minimal whitespace tidy only — NEVER delete content from the model.
+  // Prior versions ran aggressive regex post-processing (fixBrokenSentences,
+  // stripDirectQuotes) that destroyed legitimate quoted lists and produced
+  // fragments. With the {s1,s2} structural schema + grounded prompt, we
+  // trust the model's output verbatim.
+  function tidyLogicText(text) {
+    if (!text) return '';
+    let t = String(text);
+    t = t.replace(/\s{2,}/g, ' ').replace(/\s+([,.;:])/g, '$1').trim();
+    if (t && !/[.!?"'\u201c\u201d]$/.test(t)) t += '.';
+    return t;
   }
 
   function renderDimensions(assessment) {
@@ -3630,11 +3581,10 @@ ${sliceAtSentenceBoundary(policyText, 10000)}
 
       const bulletsHtml = bullets.map((b, bi) => {
         const isFirst = bi === 0;
-        // Normalise: handle new {s1,s2} object shape (preferred) or legacy plain string
+        // Normalise: handle new {s1,s2} object shape (preferred) or legacy plain string.
+        // Render verbatim (with only whitespace tidy) — no content-destroying regex.
         const rawText = joinLogicPoint(b);
-        // Post-process: fix known broken patterns from the AI (only as safety net)
-        const bText = fixBrokenSentences(rawText);
-        const cleaned = isFirst ? bText : stripDirectQuotes(bText);
+        const cleaned = tidyLogicText(rawText);
         const klass = isFirst ? 'hi' : '';
         const trailId = `btrail-${c.pillar}-${c.key}-${bi}`;
         return `
