@@ -426,6 +426,28 @@
   .think-btn .spark { color: var(--primary-soft); }
 
   .insights-card { padding: 24px; margin-top: 20px; }
+  /* Asks card */
+  .asks-card { padding: 24px; }
+  .asks-card .asks-header { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+  .asks-card .asks-header .chev { transition: transform 160ms ease; flex-shrink: 0; opacity: 0.7; }
+  .asks-card.collapsed .asks-body { display: none; }
+  .asks-card.collapsed .asks-header .chev { transform: rotate(-90deg); }
+  .asks-body { margin-top: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .ask-group { border: 1px solid hsla(0,0%,100%,0.08); border-radius: 12px; padding: 16px 18px; background: hsla(220,20%,100%,0.03); }
+  .ask-overarching { font-size: 15px; font-weight: 500; color: hsl(220,10%,94%); line-height: 1.5; margin-bottom: 10px; }
+  .ask-overarching .ask-num { display: inline-block; min-width: 22px; color: hsl(220,10%,65%); font-weight: 400; font-size: 13px; margin-right: 6px; }
+  .ask-sub-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; padding-left: 4px; }
+  .ask-sub { padding: 10px 12px 12px; border-left: 2px solid hsla(220,60%,70%,0.25); padding-left: 14px; }
+  .ask-sub-text { font-size: 13px; font-weight: 300; color: hsl(220,10%,88%); line-height: 1.55; }
+  .ask-quote { font-size: 12px; color: hsl(220,10%,70%); font-style: italic; margin-top: 6px; line-height: 1.5; }
+  .ask-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .ask-tag { font-size: 10.5px; font-weight: 500; padding: 3px 9px; border-radius: 999px; border: 1px solid transparent; letter-spacing: 0.2px; }
+  .ask-tag.focus { color: hsl(205,70%,80%); background: hsla(205,70%,50%,0.12); border-color: hsla(205,70%,50%,0.3); }
+  .ask-tag.pop   { color: hsl(275,60%,82%); background: hsla(275,60%,55%,0.14); border-color: hsla(275,60%,55%,0.3); }
+  .ask-tag.type  { color: hsl(38,80%,78%);  background: hsla(38,80%,55%,0.12);  border-color: hsla(38,80%,55%,0.3); }
+  .ask-tag.aimed { color: hsl(145,45%,78%); background: hsla(145,45%,45%,0.12); border-color: hsla(145,45%,45%,0.3); }
+  .asks-empty { color: hsl(220,10%,70%); font-size: 13px; padding: 8px 2px; }
+  .asks-loading { display: flex; align-items: center; gap: 10px; color: hsl(220,10%,70%); font-size: 13px; padding: 8px 2px; }
   .insights-header { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
   .insights-header .chev { margin-left: auto; color: hsl(220,10%,75%); transition: transform .2s ease; }
   .insights-card.expanded .insights-header .chev { transform: rotate(180deg); }
@@ -1004,6 +1026,21 @@
         <div class="wellbeing-grid">
           <div class="pillars-panel" id="pillars-panel"></div>
           <div class="dimensions-grid" id="dimensions-grid"></div>
+        </div>
+      </div>
+
+      <!-- Asks extracted from the uploaded document -->
+      <div class="glass-card asks-card" id="asks-card" style="display:none; margin-top:20px;">
+        <div class="asks-header" id="asks-header">
+          <div style="flex:1;min-width:0;">
+            <div class="section-label" style="margin:0;"><span class="label">Asks in this Document</span></div>
+            <div style="font-size:13px;font-weight:400;margin-top:2px;">Overarching recommendations and specific sub-asks, tagged by focus area, population, ask type, and who they're directed at</div>
+          </div>
+          <div id="asks-status" style="font-size:12px;color:hsl(220,10%,65%);margin-right:10px;"></div>
+          <svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="asks-body" id="asks-body">
+          <div id="asks-content"></div>
         </div>
       </div>
 
@@ -3037,6 +3074,8 @@ independent specialists who can respond to the unique needs of diverse groups.
     deepInsights: null,    // parsed deep response
     deepExpanded: false,
     thinkLoading: false,
+    asks: null,            // parsed asks response
+    asksLoading: false,
     generating: false,
   };
 
@@ -3253,6 +3292,93 @@ Return ONLY valid minified JSON (no markdown fences, no prose) in this schema:
 # Uploaded inquiry document (truncated at sentence boundary — for quote extraction)
 """
 ${sliceAtSentenceBoundary(policyText, 10000)}
+"""`;
+  }
+
+
+  // ---- Asks: extract and categorise ACOSS-style recommendations from the uploaded document ----
+  const ASK_TYPES = [
+    'Funding / investment',
+    'Legislation / regulation',
+    'Policy / strategy',
+    'Programme / service delivery',
+    'Governance / accountability',
+    'Research / evidence',
+    'Co-design / community voice',
+    'Workforce / capacity building',
+    'Data / monitoring',
+  ];
+  const ASK_AIMED_AT = [
+    'Federal government',
+    'State/Territory government',
+    'Local government',
+    'Specific department or agency',
+    'Sector / service providers',
+    'Community',
+    'Not specified',
+  ];
+
+  function buildAsksPrompt(policyText) {
+    return `You are extracting the ASKS (recommendations / calls to action) from a policy document, consultation paper, inquiry, or submission. Your goal is to produce an ACOSS-style structured list: overarching recommendations, each with specific sub-recommendations underneath.
+
+# Return format (ONLY valid minified JSON — no markdown, no prose outside JSON)
+{
+  "hasAsks": true | false,
+  "summary": "one-sentence summary describing what kind of asks this document contains, or why there are none",
+  "groups": [
+    {
+      "overarching": "complete sentence stating the overarching recommendation, in the document's own framing",
+      "subAsks": [
+        {
+          "text": "complete sentence stating one specific sub-ask",
+          "quote": "verbatim quote from the uploaded document that grounds this ask, OR empty string if no clean quote",
+          "focusAreas": ["zero or more exact strings from the focus area list"],
+          "populations": ["zero or more exact strings from the population list"],
+          "askType": "exactly one string from the ask type list",
+          "aimedAt": "exactly one string from the aimed-at list"
+        }
+      ]
+    }
+  ]
+}
+
+# What counts as an "ask"
+An ask is any explicit recommendation, call to action, proposed commitment, or request for change that the document is advancing. Examples:
+- Recommendations in a submission ("We recommend that the Government…")
+- Questions in a consultation paper that invite a specific response ("What should government do about X?") — treat the implicit ask as "Government should decide on X"
+- Proposed actions, commitments, or reforms named in a strategy
+- Budget requests, legislative changes, programme expansions
+
+If the document is a consultation paper with only questions (not yet making recommendations), set hasAsks=true and treat each major question as an overarching ask, with any sub-questions as sub-asks.
+
+If the document genuinely contains no asks (e.g. it's a descriptive report with no recommendations), set hasAsks=false, groups=[], and explain in summary.
+
+# Structure rules
+- Produce between 3 and 8 overarching groups. Group related sub-asks together under each overarching.
+- Each group must have 1–5 sub-asks.
+- Sub-asks must be concrete and specific — not abstract principles. If an item is too vague, omit it rather than include it.
+- Do not duplicate asks across groups.
+- Every sentence must be grammatically complete, ending with a full stop. No trailing fragments.
+- UK/Australian English (organisation, prioritise, programme, marginalised).
+
+# Tagging rules (MANDATORY)
+For every sub-ask, tag it with:
+- focusAreas: pick from the list below. Use exact strings. Include every area that applies; empty array if none apply.
+- populations: pick from the list below. Use exact strings. Include every population that applies; empty array if none apply.
+- askType: pick exactly ONE from the ask type list.
+- aimedAt: pick exactly ONE from the aimed-at list — who the ask is directed at.
+
+Focus area options (exact strings): ${JSON.stringify(PORTFOLIO_FOCUS_AREAS)}
+Population options (exact strings): ${JSON.stringify(PORTFOLIO_POPULATIONS)}
+Ask type options (exact strings): ${JSON.stringify(ASK_TYPES)}
+Aimed-at options (exact strings): ${JSON.stringify(ASK_AIMED_AT)}
+
+# Grounding
+Only extract asks that are actually present in the uploaded document. Do not invent, infer, or supplement from outside knowledge. The "quote" field must be an exact verbatim string from the document or empty — never paraphrased.
+
+# Uploaded document (truncated at sentence boundary)
+"""
+${sliceAtSentenceBoundary(policyText, 16000)}
 """`;
   }
 
@@ -3704,6 +3830,81 @@ ${sliceAtSentenceBoundary(policyText, 10000)}
     `).join('') || '<p style="color:hsl(220,10%,75%);font-size:13px;">No case studies returned.</p>';
   }
 
+  // ---- Render Asks ----
+  function renderAsks(asks) {
+    const card = document.getElementById('asks-card');
+    const content = document.getElementById('asks-content');
+    const status = document.getElementById('asks-status');
+    if (!card || !content) return;
+    card.style.display = '';
+    card.classList.remove('collapsed');
+
+    if (!asks || asks.error) {
+      status.textContent = '';
+      content.innerHTML = `<div class="asks-empty">Could not extract asks from this document${asks && asks.error ? ': ' + escapeHtml(asks.error) : '.'}</div>`;
+      return;
+    }
+    const groups = Array.isArray(asks.groups) ? asks.groups : [];
+    const total = groups.reduce((n, g) => n + ((g && g.subAsks && g.subAsks.length) || 0), 0);
+    status.textContent = groups.length
+      ? `${groups.length} group${groups.length>1?'s':''} · ${total} sub-ask${total!==1?'s':''}`
+      : '';
+
+    if (!asks.hasAsks || groups.length === 0) {
+      content.innerHTML = `<div class="asks-empty">${escapeHtml(asks.summary || 'No recommendations or calls to action identified in this document.')}</div>`;
+      return;
+    }
+
+    const summaryHtml = asks.summary
+      ? `<div style="color:hsl(220,10%,78%);font-size:13px;line-height:1.55;margin-bottom:6px;">${escapeHtml(asks.summary)}</div>`
+      : '';
+
+    const groupsHtml = groups.map((g, gi) => {
+      const subs = Array.isArray(g.subAsks) ? g.subAsks : [];
+      const subsHtml = subs.map(s => {
+        const faTags = Array.isArray(s.focusAreas) ? s.focusAreas.filter(Boolean) : [];
+        const popTags = Array.isArray(s.populations) ? s.populations.filter(Boolean) : [];
+        const tagHtml = [
+          ...faTags.map(t => `<span class="ask-tag focus">${escapeHtml(t)}</span>`),
+          ...popTags.map(t => `<span class="ask-tag pop">${escapeHtml(t)}</span>`),
+          s.askType ? `<span class="ask-tag type">${escapeHtml(s.askType)}</span>` : '',
+          s.aimedAt ? `<span class="ask-tag aimed">${escapeHtml(s.aimedAt)}</span>` : '',
+        ].filter(Boolean).join('');
+        const quoteHtml = s.quote && s.quote.trim()
+          ? `<div class="ask-quote">“${escapeHtml(s.quote.trim())}”</div>`
+          : '';
+        return `
+          <div class="ask-sub">
+            <div class="ask-sub-text">${escapeHtml(s.text || '')}</div>
+            ${quoteHtml}
+            <div class="ask-tags">${tagHtml}</div>
+          </div>`;
+      }).join('');
+      return `
+        <div class="ask-group">
+          <div class="ask-overarching"><span class="ask-num">${gi+1}.</span>${escapeHtml(g.overarching || '')}</div>
+          <div class="ask-sub-list">${subsHtml}</div>
+        </div>`;
+    }).join('');
+
+    content.innerHTML = summaryHtml + groupsHtml;
+  }
+
+  function setAsksLoading(on) {
+    const card = document.getElementById('asks-card');
+    const content = document.getElementById('asks-content');
+    const status = document.getElementById('asks-status');
+    if (!card || !content) return;
+    if (on) {
+      card.style.display = '';
+      card.classList.remove('collapsed');
+      status.innerHTML = '<span class="spinner sm" style="display:inline-block;vertical-align:middle;"></span>';
+      content.innerHTML = '<div class="asks-loading"><span class="spinner sm" style="display:inline-block;"></span> Extracting asks from the uploaded document…</div>';
+    } else {
+      status.textContent = '';
+    }
+  }
+
   function buildSavedAssessment(s) {
     // Build a minimal assessment object from saved data for display
     return {
@@ -3948,12 +4149,20 @@ ${sliceAtSentenceBoundary(policyText, 10000)}
     // Reset prior state
     state.deepInsights = null;
     state.deepExpanded = false;
+    state.asks = null;
+    state.asksLoading = false;
     const card = document.getElementById('insights-card');
     const body = document.getElementById('insights-body');
     card.style.display = 'none';
     body.style.display = 'none';
     card.classList.remove('expanded');
     document.getElementById('think-label').textContent = 'Think Deeply — Generate Deep Strategic Insights';
+    const asksCard = document.getElementById('asks-card');
+    if (asksCard) { asksCard.style.display = 'none'; asksCard.classList.remove('collapsed'); }
+    const asksContent = document.getElementById('asks-content');
+    if (asksContent) asksContent.innerHTML = '';
+    const asksStatus = document.getElementById('asks-status');
+    if (asksStatus) asksStatus.textContent = '';
 
     // Loading view
     document.getElementById('loading-title').textContent = 'Analysing Document';
@@ -4003,6 +4212,24 @@ ${sliceAtSentenceBoundary(policyText, 10000)}
       state.assessment = data;
       renderResults(data);
       setView('results');
+
+      // Kick off asks extraction in parallel — non-blocking
+      (async () => {
+        state.asksLoading = true;
+        setAsksLoading(true);
+        try {
+          const asksRaw = await callGemini(buildAsksPrompt(text), 12000, true);
+          const parsed = parseJSON(asksRaw);
+          state.asks = parsed;
+          renderAsks(parsed);
+        } catch (err) {
+          console.error('Asks extraction failed:', err);
+          state.asks = { error: err && err.message ? err.message : 'unknown error' };
+          renderAsks(state.asks);
+        } finally {
+          state.asksLoading = false;
+        }
+      })();
     } catch (err) {
       console.error(err);
       setView('intake');
@@ -4081,6 +4308,17 @@ ${sliceAtSentenceBoundary(policyText, 10000)}
       btn.disabled = false;
     }
   });
+
+  // Asks header toggle (collapse/expand)
+  (function wireAsksHeader() {
+    const hdr = document.getElementById('asks-header');
+    if (!hdr) return;
+    hdr.addEventListener('click', () => {
+      const card = document.getElementById('asks-card');
+      if (!card) return;
+      card.classList.toggle('collapsed');
+    });
+  })();
 
   // Insights header toggle (purely visual)
   document.getElementById('insights-header').addEventListener('click', () => {
